@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
@@ -58,30 +58,29 @@ export default function ResultsPage() {
     return () => clearTimeout(timer)
   }, [from, to])
 
-  // Update theme when active flight changes
-  useEffect(() => {
-    if (!flights.length) return
-    const flight = sortedFlights[activeIndex]
-    if (!flight) return
-    const code = flight.airline.code
-    setTheme(airlineThemes[code] || DEFAULT_THEME)
-  }, [activeIndex, flights])
-
   // Sort + filter
-  const filtered = flights.filter(f => {
+  const filtered = useMemo(() => flights.filter(f => {
     if (activeFilter === 'Semua')    return true
     if (activeFilter === 'Langsung') return f.stops === 0
     if (activeFilter === '1 Transit')return f.stops === 1
     return f.airline.name.toLowerCase().includes(activeFilter.toLowerCase())
-  })
+  }), [flights, activeFilter])
 
-  const sortedFlights = [...filtered].sort((a, b) => {
+  const sortedFlights = useMemo(() => [...filtered].sort((a, b) => {
     if (sortBy === 'price')    return a.price - b.price
     if (sortBy === 'time')     return a.departTime.localeCompare(b.departTime)
     if (sortBy === 'rating')   return b.rating - a.rating
     if (sortBy === 'duration') return a.duration.localeCompare(b.duration)
     return 0
-  })
+  }), [filtered, sortBy])
+
+  // Update theme when active flight changes
+  useEffect(() => {
+    if (!sortedFlights.length) return
+    const flight = sortedFlights[activeIndex]
+    if (!flight) return
+    setTheme(airlineThemes[flight.airline.code] || DEFAULT_THEME)
+  }, [activeIndex, sortedFlights])
 
   const handleSelect = (i) => {
     setActiveIndex(i)

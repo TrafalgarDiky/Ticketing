@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Check, Home, Download } from 'lucide-react'
+import { Home, Download } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import { formatPrice } from '../data/flights'
 

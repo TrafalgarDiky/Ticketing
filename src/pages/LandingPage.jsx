@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import heroImg from '../assets/hero-poster.jpg'
 import sinImg   from '../assets/singapura.avif'
 import bkkImg   from '../assets/bangkok.jpg'
@@ -47,12 +48,31 @@ const FLIGHTS = [
 
 /* ── Destination carousel data ── */
 const DESTS = [
-  { code:'SIN', city:'Singapura', sub:'Singapura · 1j 50m',         price:'Rp 1,2jt', tag:'Hemat 25%', img:sinImg, theme:'#11a0a8', desc:'Kota taman futuristik — Marina Bay, Gardens by the Bay, dan surga kuliner hawker yang tak pernah tidur.' },
-  { code:'BKK', city:'Bangkok',   sub:'Thailand · 3j 25m',           price:'Rp 2,1jt', tag:null,        img:bkkImg, theme:'#e0a23a', desc:'Energi siang-malam: kuil emas, pasar terapung, dan street food legendaris di setiap sudut kota.' },
-  { code:'NRT', city:'Tokyo',     sub:'Jepang · 7j 30m',             price:'Rp 6,5jt', tag:'Trending',  img:nrtImg, theme:'#e87ba0', desc:'Pertemuan tradisi dan masa depan — kuil yang tenang, distrik neon Shibuya, dan musim sakura.' },
-  { code:'DXB', city:'Dubai',     sub:'UEA · 8j 10m',                price:'Rp 8,9jt', tag:null,        img:dxbImg, theme:'#d98a3d', desc:'Gurun bertemu kemewahan: Burj Khalifa, mal raksasa, dan safari pasir keemasan saat senja.' },
-  { code:'ICN', city:'Seoul',     sub:'Korea Selatan · 7j 05m',      price:'Rp 5,8jt', tag:null,        img:icnImg, theme:'#8a6fe0', desc:'K-culture, istana bersejarah, kafe estetik, dan belanja larut malam di Myeongdong.' },
-  { code:'SYD', city:'Sydney',    sub:'Australia · 7j 20m',          price:'Rp 7,2jt', tag:null,        img:sydImg, theme:'#3d86d9', desc:'Opera House ikonik, pantai Bondi, dan pelabuhan biru yang memukau sepanjang tahun.' },
+  { code:'SIN', city:'Singapura', sub:'Singapura · 1j 50m',    price:'Rp 1,2jt', tag:'Hemat 25%', img:sinImg, desc:'Kota taman futuristik — Marina Bay, Gardens by the Bay, dan surga kuliner hawker yang tak pernah tidur.' },
+  { code:'BKK', city:'Bangkok',   sub:'Thailand · 3j 25m',     price:'Rp 2,1jt', tag:null,        img:bkkImg, desc:'Energi siang-malam: kuil emas, pasar terapung, dan street food legendaris di setiap sudut kota.' },
+  { code:'NRT', city:'Tokyo',     sub:'Jepang · 7j 30m',       price:'Rp 6,5jt', tag:'Trending',  img:nrtImg, desc:'Pertemuan tradisi dan masa depan — kuil yang tenang, distrik neon Shibuya, dan musim sakura.' },
+  { code:'DXB', city:'Dubai',     sub:'UEA · 8j 10m',          price:'Rp 8,9jt', tag:null,        img:dxbImg, desc:'Gurun bertemu kemewahan: Burj Khalifa, mal raksasa, dan safari pasir keemasan saat senja.' },
+  { code:'ICN', city:'Seoul',     sub:'Korea Selatan · 7j 05m', price:'Rp 5,8jt', tag:null,       img:icnImg, desc:'K-culture, istana bersejarah, kafe estetik, dan belanja larut malam di Myeongdong.' },
+  { code:'SYD', city:'Sydney',    sub:'Australia · 7j 20m',    price:'Rp 7,2jt', tag:null,        img:sydImg, desc:'Opera House ikonik, pantai Bondi, dan pelabuhan biru yang memukau sepanjang tahun.' },
+]
+
+const AIRPORTS = [
+  { code:'CGK', city:'Jakarta',      name:'Soekarno-Hatta',          country:'Indonesia' },
+  { code:'DPS', city:'Bali',         name:'Ngurah Rai',              country:'Indonesia' },
+  { code:'SUB', city:'Surabaya',     name:'Juanda',                  country:'Indonesia' },
+  { code:'KNO', city:'Medan',        name:'Kualanamu',               country:'Indonesia' },
+  { code:'UPG', city:'Makassar',     name:'Sultan Hasanuddin',       country:'Indonesia' },
+  { code:'YOG', city:'Yogyakarta',   name:'Yogyakarta Internasional',country:'Indonesia' },
+  { code:'BPN', city:'Balikpapan',   name:'Sultan Aji M. Sulaiman',  country:'Indonesia' },
+  { code:'LOP', city:'Lombok',       name:'Zainuddin Abdul Madjid',  country:'Indonesia' },
+  { code:'SIN', city:'Singapura',    name:'Changi',                  country:'Singapura' },
+  { code:'BKK', city:'Bangkok',      name:'Suvarnabhumi',            country:'Thailand' },
+  { code:'NRT', city:'Tokyo',        name:'Narita',                  country:'Jepang' },
+  { code:'DXB', city:'Dubai',        name:'Dubai Internasional',     country:'UEA' },
+  { code:'ICN', city:'Seoul',        name:'Incheon',                 country:'Korea Selatan' },
+  { code:'SYD', city:'Sydney',       name:'Kingsford Smith',         country:'Australia' },
+  { code:'KUL', city:'Kuala Lumpur', name:'KLIA',                    country:'Malaysia' },
+  { code:'HKG', city:'Hong Kong',    name:'Chek Lap Kok',            country:'Hong Kong' },
 ]
 
 const AIRLINE_MARQUEE = [
@@ -67,6 +87,7 @@ const AIRLINE_MARQUEE = [
 ]
 
 function rp(n) { return 'Rp ' + n.toLocaleString('id-ID') }
+
 
 /* ── Brand logo mark ── */
 function BrandMark({ size = 30 }) {
@@ -108,137 +129,211 @@ function SwapBtn({ onClick }) {
   )
 }
 
-/* ── Destination Carousel ── */
-function DestCarousel({ onSearchTo, onBgChange }) {
-  const [active, setActive]   = useState(0)
-  const [hovCard, setHovCard] = useState(null)
-  const trackRef = useRef(null)
-  const wrapRef  = useRef(null)
-  const timerRef = useRef(null)
-  const dragging = useRef(false)
-  const startX   = useRef(0)
-  const moved    = useRef(0)
-  const baseX    = useRef(0)
-  const n = DESTS.length
 
-  const getTargetX = useCallback((i) => {
-    const track = trackRef.current
-    const wrap  = wrapRef.current
-    if (!track || !wrap) return 0
-    const card = track.children[i]
-    if (!card) return 0
-    return Math.round(wrap.clientWidth / 2 - card.offsetLeft - card.offsetWidth / 2)
-  }, [])
+/* ── Airport autocomplete ── */
+function AirportSelect({ label, value, onChange, hasSwap, onSwap }) {
+  const [open, setOpen] = useState(false)
+  const [q, setQ]       = useState(value)
+  const ref             = useRef(null)
 
-  const applyX = useCallback((x, instant = false) => {
-    const track = trackRef.current
-    if (!track) return
-    if (instant) { track.style.transition = 'none'; track.style.transform = `translateX(${x}px)`; void track.offsetHeight; track.style.transition = '' }
-    else track.style.transform = `translateX(${x}px)`
-  }, [])
-
-  const goTo = useCallback((i, instant = false) => {
-    const idx = Math.max(0, Math.min(n - 1, i))
-    setActive(idx)
-    const col = DESTS[idx].theme
-    onBgChange?.(`radial-gradient(120% 78% at 50% -6%, ${col}2b 0%, ${col}12 32%, rgba(255,255,255,0) 64%)`)
-    setTimeout(() => {
-      const x = getTargetX(idx)
-      baseX.current = x
-      applyX(x, instant)
-    }, 0)
-  }, [n, getTargetX, applyX, onBgChange])
-
-  const startAuto = useCallback(() => {
-    clearInterval(timerRef.current)
-    timerRef.current = setInterval(() => {
-      setActive(a => {
-        const idx = (a + 1) % n
-        const col = DESTS[idx].theme
-        onBgChange?.(`radial-gradient(120% 78% at 50% -6%, ${col}2b 0%, ${col}12 32%, rgba(255,255,255,0) 64%)`)
-        setTimeout(() => { const x = getTargetX(idx); baseX.current = x; applyX(x) }, 0)
-        return idx
-      })
-    }, 4500)
-  }, [n, getTargetX, applyX, onBgChange])
-
-  const stopAuto = useCallback(() => clearInterval(timerRef.current), [])
+  useEffect(() => { setQ(value) }, [value])
 
   useEffect(() => {
-    goTo(0, true)
-    startAuto()
-    const onResize = () => goTo(active, true)
-    window.addEventListener('resize', onResize)
-    return () => { stopAuto(); window.removeEventListener('resize', onResize) }
-  }, []) // eslint-disable-line
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
 
-  const onPointerDown = (e) => {
-    dragging.current = true; moved.current = 0; startX.current = e.clientX
-    trackRef.current.style.transition = 'none'
-    trackRef.current.style.cursor = 'grabbing'
-    try { e.target.setPointerCapture(e.pointerId) } catch (_) {}
-    stopAuto()
-  }
-  const onPointerMove = (e) => {
-    if (!dragging.current) return
-    moved.current = e.clientX - startX.current
-    applyX(baseX.current + moved.current)
-  }
-  const onPointerUp = () => {
-    if (!dragging.current) return
-    dragging.current = false
-    trackRef.current.style.transition = ''
-    trackRef.current.style.cursor = 'grab'
-    if (Math.abs(moved.current) > 60) goTo(active + (moved.current < 0 ? 1 : -1))
-    else goTo(active)
-    startAuto()
-  }
+  const filtered = AIRPORTS.filter(a =>
+    [a.city, a.code, a.name, a.country].some(s => s.toLowerCase().includes(q.toLowerCase()))
+  ).slice(0, 6)
+
+  const pick = (a) => { const v = `${a.city} (${a.code})`; setQ(v); onChange(v); setOpen(false) }
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', overflow: 'hidden', padding: '14px 0 6px' }}
-      onMouseEnter={stopAuto} onMouseLeave={() => { if (!dragging.current) startAuto() }}>
-      <div ref={trackRef} style={{ display: 'flex', gap: 22, alignItems: 'center', willChange: 'transform', cursor: 'grab', touchAction: 'pan-y', transition: 'transform .6s cubic-bezier(.22,.61,.36,1)' }}
-        onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
-        {DESTS.map((d, i) => {
-          const isActive = i === active
-          const isHov    = isActive && hovCard === i
-          return (
-            <div key={d.code}
-              style={{ position: 'relative', flex: '0 0 340px', height: 464, borderRadius: 22, overflow: 'hidden', background: mist, transform: isActive ? 'scale(1)' : 'scale(.86)', opacity: isActive ? 1 : 0.5, transition: 'transform .65s cubic-bezier(.22,.61,.36,1), opacity .65s ease, box-shadow .65s ease', boxShadow: isActive ? '0 34px 64px -30px rgba(12,31,43,.7)' : 'none', userSelect: 'none', cursor: 'pointer' }}
-              onClick={() => { if (Math.abs(moved.current) > 6) return; if (i !== active) { goTo(i); stopAuto(); startAuto(); return; } onSearchTo(d.city, d.code) }}
-              onMouseEnter={() => isActive && setHovCard(i)}
-              onMouseLeave={() => setHovCard(null)}>
-              <img src={d.img} alt={d.city} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none', transform: isHov ? 'scale(1.07)' : 'scale(1)', transition: 'transform .7s cubic-bezier(.22,.61,.36,1)' }} />
-              <div style={{ position: 'absolute', inset: 0, zIndex: 2, background: isActive ? (isHov ? 'linear-gradient(180deg,rgba(12,31,43,0) 0%,rgba(12,31,43,.18) 55%,rgba(7,18,26,.55) 100%)' : 'linear-gradient(180deg,rgba(12,31,43,0) 18%,rgba(12,31,43,.62) 52%,rgba(7,18,26,.92) 100%)') : 'linear-gradient(180deg,rgba(12,31,43,0) 38%,rgba(12,31,43,.78) 100%)', pointerEvents: 'none', transition: 'background .5s ease' }} />
-              {d.tag && <span style={{ position: 'absolute', top: 14, left: 14, zIndex: 3, background: 'rgba(255,255,255,.92)', color: accentDeep, fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999 }}>{d.tag}</span>}
-              <div style={{ position: 'absolute', left: 18, right: 18, bottom: 16, zIndex: 3, color: '#fff' }}>
-                <div style={{ fontFamily: fontDisplay, fontWeight: 700, fontSize: 22, letterSpacing: '-0.02em' }}>{d.city}</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 10, marginTop: 6 }}>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,.82)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: '1 1 auto' }}>{d.sub}</span>
-                  <span style={{ textAlign: 'right', lineHeight: 1.15, flex: '0 0 auto' }}>
-                    <small style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,.78)', fontWeight: 500, whiteSpace: 'nowrap' }}>mulai dari</small>
-                    <b style={{ fontSize: 17, fontWeight: 700, whiteSpace: 'nowrap' }}>{d.price}</b>
-                  </span>
-                </div>
-                <div style={{ fontSize: 13.5, lineHeight: 1.5, color: 'rgba(255,255,255,.92)', maxHeight: isActive ? 140 : 0, opacity: isActive ? 1 : 0, transform: isActive ? 'none' : 'translateY(8px)', overflow: 'hidden', transition: 'max-height .5s ease, opacity .45s ease, transform .45s ease, margin .5s ease', marginTop: isActive ? 12 : 0 }}>
-                  {d.desc}
-                  <span style={{ display: 'inline-block', marginTop: 10, fontWeight: 700, fontSize: 13, color: '#bdeef0', letterSpacing: '.01em' }}>Cari penerbangan →</span>
-                </div>
+    <div ref={ref} style={{ position: 'relative', background: mist, border: '1px solid transparent', borderRadius: 14, padding: '12px 16px', transition: '.2s' }}>
+      <span style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: inkSoft, marginBottom: 3 }}>{label}</span>
+      <input type="text" value={q}
+        onChange={e => { setQ(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: fontBody, fontSize: 16, fontWeight: 600, color: ink, width: '100%', padding: 0 }}
+      />
+      {hasSwap && <SwapBtn onClick={onSwap} />}
+      {open && filtered.length > 0 && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 50, background: paper, borderRadius: 14, border: `1px solid ${line}`, boxShadow: '0 20px 50px -20px rgba(12,31,43,.35)', overflow: 'hidden' }}>
+          {filtered.map(a => (
+            <div key={a.code} onMouseDown={() => pick(a)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', cursor: 'pointer', transition: '.15s' }}
+              onMouseEnter={e => e.currentTarget.style.background = mist}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: ink }}>{a.city}</div>
+                <div style={{ fontSize: 12, color: inkSoft, marginTop: 2 }}>{a.name} · {a.country}</div>
+              </div>
+              <span style={{ fontWeight: 800, fontSize: 14, color: accentDeep, letterSpacing: '.05em' }}>{a.code}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── Date field ── */
+function DateField({ label, value, onChange }) {
+  return (
+    <div style={{ background: mist, border: '1px solid transparent', borderRadius: 14, padding: '12px 16px', transition: '.2s' }}>
+      <span style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: inkSoft, marginBottom: 3 }}>{label}</span>
+      <input type="date" value={value} onChange={e => onChange(e.target.value)}
+        style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: fontBody, fontSize: 16, fontWeight: 600, color: ink, width: '100%', padding: 0, cursor: 'pointer' }}
+      />
+    </div>
+  )
+}
+
+/* ── Passenger selector ── */
+function PaxSelect({ onChange }) {
+  const [open, setOpen]     = useState(false)
+  const [adults, setAdults] = useState(1)
+  const [kids, setKids]     = useState(0)
+  const ref                 = useRef(null)
+
+  useEffect(() => {
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
+
+  const label = (a, k) => [a > 0 ? `${a} Dewasa` : null, k > 0 ? `${k} Anak` : null].filter(Boolean).join(', ') || '1 Dewasa'
+  const upd   = (a, k) => onChange(label(a, k))
+  const chgA  = (n) => { setAdults(n); upd(n, kids) }
+  const chgK  = (n) => { setKids(n);   upd(adults, n) }
+
+  const btnBase = { width: 30, height: 30, borderRadius: '50%', cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 18, fontWeight: 300, lineHeight: 1, transition: '.15s', fontFamily: 'inherit', border: 'none' }
+
+  return (
+    <div ref={ref} style={{ position: 'relative', background: mist, border: '1px solid transparent', borderRadius: 14, padding: '12px 16px', cursor: 'pointer', transition: '.2s', userSelect: 'none' }} onClick={() => setOpen(o => !o)}>
+      <span style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: inkSoft, marginBottom: 3 }}>Penumpang</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 16, fontWeight: 600, color: ink }}>
+        {label(adults, kids)}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={inkSoft} strokeWidth="2.5" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: '.2s', flexShrink: 0 }}><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      {open && (
+        <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50, background: paper, border: `1px solid ${line}`, borderRadius: 14, padding: '8px 18px 14px', boxShadow: '0 20px 50px -20px rgba(12,31,43,.35)', minWidth: 240 }}>
+          {[
+            { lbl:'Dewasa', sub:'≥ 12 tahun', val:adults, set:chgA, min:1 },
+            { lbl:'Anak',   sub:'2–11 tahun', val:kids,   set:chgK, min:0 },
+          ].map(({ lbl, sub, val, set, min }, i, arr) => (
+            <div key={lbl} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 0', borderBottom: i < arr.length - 1 ? `1px solid ${line}` : 'none' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: ink }}>{lbl}</div>
+                <div style={{ fontSize: 12, color: inkSoft, marginTop: 2 }}>{sub}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <button type="button" disabled={val <= min} onClick={() => set(val - 1)}
+                  style={{ ...btnBase, border: `1.5px solid ${val <= min ? line : accentDeep}`, background: 'transparent', color: val <= min ? inkSoft : accentDeep, opacity: val <= min ? 0.4 : 1 }}>−</button>
+                <span style={{ fontWeight: 700, fontSize: 15, color: ink, minWidth: 16, textAlign: 'center' }}>{val}</span>
+                <button type="button" disabled={val >= 9} onClick={() => set(val + 1)}
+                  style={{ ...btnBase, border: `1.5px solid ${accent}`, background: accentSoft, color: accentDeep }}>+</button>
               </div>
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
-      {/* dots */}
-      <div style={{ display: 'flex', gap: 9, justifyContent: 'center', marginTop: 26 }}>
-        {DESTS.map((_, i) => (
-          <button key={i} type="button" aria-label={`Destinasi ${i + 1}`}
-            onClick={() => { goTo(i); stopAuto(); startAuto() }}
-            style={{ width: i === active ? 26 : 9, height: 9, borderRadius: 999, border: 'none', background: i === active ? accent : 'rgba(19,36,46,.22)', cursor: 'pointer', padding: 0, transition: '.3s' }} />
-        ))}
-      </div>
-      <p style={{ textAlign: 'center', color: inkSoft, fontSize: 13, margin: '14px 0 0' }}>Geser kartu, atau pilih satu untuk melihat detailnya.</p>
+/* ── Destination Bento Grid ── */
+function DestBentoGrid({ onSearchTo }) {
+  const [hovIdx, setHovIdx] = useState(null)
+
+  const layouts = [
+    { gridColumn: '1', gridRow: '3' },
+    { gridColumn: '2', gridRow: '3' },
+    { gridColumn: '1 / 3', gridRow: '1 / 3' },
+    { gridColumn: '3', gridRow: '1' },
+    { gridColumn: '3', gridRow: '2' },
+    { gridColumn: '3', gridRow: '3' },
+  ]
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr 1fr',
+      gridTemplateRows: '260px 260px 200px',
+      gap: 14,
+    }}>
+      {DESTS.map((d, i) => {
+        const isHov     = hovIdx === i
+        const isFeature = i === 2
+        return (
+          <div
+            key={d.code}
+            style={{
+              ...layouts[i],
+              position: 'relative',
+              borderRadius: 20,
+              overflow: 'hidden',
+              cursor: 'pointer',
+              background: mist,
+              boxShadow: isHov ? '0 28px 56px -20px rgba(12,31,43,.55)' : '0 6px 24px -10px rgba(12,31,43,.18)',
+              transition: 'box-shadow .35s ease, transform .35s ease',
+              transform: isHov ? 'translateY(-4px)' : 'none',
+            }}
+            onClick={() => onSearchTo(d.city, d.code)}
+            onMouseEnter={() => setHovIdx(i)}
+            onMouseLeave={() => setHovIdx(null)}
+          >
+            <img src={d.img} alt={d.city} style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'cover', pointerEvents: 'none',
+              transform: isHov ? 'scale(1.07)' : 'scale(1)',
+              transition: 'transform .7s cubic-bezier(.22,.61,.36,1)',
+            }} />
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+              background: isHov
+                ? 'linear-gradient(180deg,rgba(12,31,43,0) 0%,rgba(7,18,26,.45) 55%,rgba(7,18,26,.75) 100%)'
+                : 'linear-gradient(180deg,rgba(12,31,43,0) 28%,rgba(12,31,43,.65) 60%,rgba(7,18,26,.92) 100%)',
+              transition: 'background .5s ease',
+            }} />
+            {d.tag && (
+              <span style={{
+                position: 'absolute', top: 14, left: 14, zIndex: 3,
+                background: 'rgba(255,255,255,.92)', color: accentDeep,
+                fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 999,
+              }}>{d.tag}</span>
+            )}
+            <div style={{ position: 'absolute', left: 20, right: 20, bottom: 18, zIndex: 3, color: '#fff' }}>
+              <div style={{ fontFamily: fontDisplay, fontWeight: 700, letterSpacing: '-0.02em', fontSize: isFeature ? 30 : 20 }}>{d.city}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 10, marginTop: 6 }}>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,.8)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: '1 1 auto' }}>{d.sub}</span>
+                <span style={{ textAlign: 'right', lineHeight: 1.15, flex: '0 0 auto' }}>
+                  <small style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,.75)', fontWeight: 500, whiteSpace: 'nowrap' }}>mulai dari</small>
+                  <b style={{ fontSize: isFeature ? 20 : 16, fontWeight: 700, whiteSpace: 'nowrap' }}>{d.price}</b>
+                </span>
+              </div>
+              {isFeature && (
+                <div style={{
+                  marginTop: 12, fontSize: 13.5, lineHeight: 1.55, color: 'rgba(255,255,255,.88)',
+                  maxHeight: isHov ? 120 : 0, opacity: isHov ? 1 : 0,
+                  overflow: 'hidden', transition: 'max-height .5s ease, opacity .4s ease',
+                }}>
+                  {d.desc}
+                  <span style={{ display: 'block', marginTop: 10, fontWeight: 700, fontSize: 13, color: '#bdeef0' }}>Cari penerbangan →</span>
+                </div>
+              )}
+              {!isFeature && isHov && (
+                <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: '#bdeef0', letterSpacing: '.01em' }}>
+                  Cari penerbangan →
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -290,221 +385,8 @@ function FooterMarquee() {
   )
 }
 
-/* ── Booking flow: Results screen ── */
-function ResultsScreen({ state, onBack, onPick }) {
-  const [sort, setSort] = useState('price')
-  const sorted = [...FLIGHTS].sort((a, b) => sort === 'price' ? a.price - b.price : sort === 'dur' ? a.durMin - b.durMin : a.dep.localeCompare(b.dep))
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: mist, overflowY: 'auto', animation: 'scrIn .32s ease' }}>
-      {/* bar */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 5, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${line}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, height: 68, maxWidth: 1080, margin: '0 auto', padding: '0 28px' }}>
-          <button type="button" onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'none', border: 'none', fontFamily: fontBody, fontWeight: 600, fontSize: 15, color: ink, cursor: 'pointer', padding: '9px 12px 9px 8px', borderRadius: 10 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Beranda
-          </button>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 11, fontFamily: fontDisplay, fontWeight: 800, fontSize: 19, color: ink }}>
-            <BrandMark size={26} />Syududu Air
-          </span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: inkSoft, fontWeight: 500 }}>
-            <b style={{ color: ink, fontFamily: fontDisplay }}>{state.from}</b>
-            <span style={{ color: accent, fontWeight: 700 }}>→</span>
-            <b style={{ color: ink, fontFamily: fontDisplay }}>{state.to}</b>
-            <span>· {state.depart} · {state.pax}</span>
-          </div>
-        </div>
-      </div>
-      {/* body */}
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '36px 28px 90px' }}>
-        <h1 style={{ fontFamily: fontDisplay, fontSize: 'clamp(26px,3vw,34px)', fontWeight: 700, letterSpacing: '-.02em', margin: '0 0 4px', color: ink }}>Hasil Pencarian</h1>
-        <p style={{ color: inkSoft, margin: '0 0 26px', fontSize: 15 }}>{sorted.length} penerbangan {state.fromCity} → {state.toCity} tersedia</p>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-          {[{id:'price',lbl:'Termurah'},{id:'dur',lbl:'Tercepat'},{id:'dep',lbl:'Paling pagi'}].map(s => (
-            <button key={s.id} type="button" onClick={() => setSort(s.id)}
-              style={{ fontFamily: fontBody, fontWeight: 600, fontSize: 13.5, padding: '9px 17px', borderRadius: 999, border: `1px solid ${line}`, background: sort === s.id ? ink : '#fff', color: sort === s.id ? '#fff' : inkSoft, cursor: 'pointer', transition: '.2s' }}>{s.lbl}</button>
-          ))}
-        </div>
-        {sorted.map(f => {
-          const al = AIRLINES[f.code]
-          return (
-            <div key={f.no} style={{ display: 'grid', gridTemplateColumns: '1.5fr 2.5fr 1.1fr', gap: 24, alignItems: 'center', background: '#fff', border: `1px solid ${line}`, borderRadius: 18, padding: '22px 26px', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-                <span style={{ width: 46, height: 46, borderRadius: 12, background: al.color, display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 800, fontSize: 15, fontFamily: fontDisplay, flex: '0 0 auto', letterSpacing: '.02em' }}>{f.code}</span>
-                <span>
-                  <span style={{ display: 'block', fontWeight: 700, fontSize: 14.5, color: ink, lineHeight: 1.2 }}>{al.name}</span>
-                  <span style={{ display: 'block', fontSize: 12.5, color: inkSoft, marginTop: 2 }}>{f.no}</span>
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ textAlign: 'center', flex: '0 0 auto' }}>
-                  <div style={{ fontFamily: fontDisplay, fontWeight: 700, fontSize: 21, letterSpacing: '-.02em', color: ink }}>{f.dep}</div>
-                  <div style={{ fontSize: 12, color: inkSoft, fontWeight: 600, marginTop: 2 }}>{state.from}</div>
-                </div>
-                <div style={{ flex: 1, textAlign: 'center', color: inkSoft, minWidth: 90 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600 }}>{f.dur}</div>
-                  <div style={{ height: 2, background: line, position: 'relative', margin: '7px 0', borderRadius: 2 }}>
-                    <div style={{ position: 'absolute', right: 0, top: '50%', width: 6, height: 6, borderRight: `2px solid ${accent}`, borderTop: `2px solid ${accent}`, transform: 'translateY(-50%) rotate(45deg)' }} />
-                  </div>
-                  <div style={{ fontSize: 11.5, color: accent, fontWeight: 700 }}>{f.stops}</div>
-                </div>
-                <div style={{ textAlign: 'center', flex: '0 0 auto' }}>
-                  <div style={{ fontFamily: fontDisplay, fontWeight: 700, fontSize: 21, letterSpacing: '-.02em', color: ink }}>{f.arr}</div>
-                  <div style={{ fontSize: 12, color: inkSoft, fontWeight: 600, marginTop: 2 }}>{state.to}</div>
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <b style={{ display: 'block', fontFamily: fontDisplay, fontSize: 20, fontWeight: 700, color: ink, letterSpacing: '-.02em' }}>{rp(f.price)}</b>
-                <small style={{ fontSize: 11.5, color: inkSoft }}>/ orang</small>
-                <button type="button" onClick={() => onPick(f)}
-                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginTop: 10, padding: '10px 22px', background: accent, color: '#fff', border: 'none', borderRadius: 999, fontFamily: fontBody, fontWeight: 600, fontSize: 14, cursor: 'pointer', boxShadow: '0 8px 22px -10px rgba(17,138,144,.8)' }}>Pilih</button>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
 
-/* ── Booking flow: Booking screen ── */
-function BookingScreen({ state, flight, onBack, onPay }) {
-  const [payMethod, setPayMethod] = useState(0)
-  const al = AIRLINES[flight.code]
-  const n = parseInt((state.pax || '1').match(/\d+/)?.[0] || 1)
-  const base = flight.price * n
-  const tax = Math.round(base * 0.11)
-  const fee = 25000
-  const total = base + tax + fee
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: mist, overflowY: 'auto', animation: 'scrIn .32s ease' }}>
-      <div style={{ position: 'sticky', top: 0, zIndex: 5, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${line}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, height: 68, maxWidth: 1080, margin: '0 auto', padding: '0 28px' }}>
-          <button type="button" onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'none', border: 'none', fontFamily: fontBody, fontWeight: 600, fontSize: 15, color: ink, cursor: 'pointer', padding: '9px 12px 9px 8px', borderRadius: 10 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Hasil pencarian
-          </button>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 11, fontFamily: fontDisplay, fontWeight: 800, fontSize: 19, color: ink }}><BrandMark size={26} />Syududu Air</span>
-        </div>
-      </div>
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '36px 28px 90px' }}>
-        <h1 style={{ fontFamily: fontDisplay, fontSize: 'clamp(26px,3vw,34px)', fontWeight: 700, letterSpacing: '-.02em', margin: '0 0 4px', color: ink }}>Lengkapi Pemesanan</h1>
-        <p style={{ color: inkSoft, margin: '0 0 26px', fontSize: 15 }}>Isi data penumpang dan pilih metode pembayaran.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 28, alignItems: 'start' }}>
-          <div>
-            {/* contact */}
-            <div style={{ background: '#fff', border: `1px solid ${line}`, borderRadius: 18, padding: 26, marginBottom: 18 }}>
-              <h3 style={{ fontFamily: fontDisplay, fontSize: 17, margin: '0 0 18px', color: ink }}>Data kontak</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 6 }}><label style={{ fontSize: 12.5, fontWeight: 600, color: inkSoft }}>Email</label><input type="email" placeholder="nama@email.com" style={{ fontFamily: fontBody, fontSize: 15, padding: '12px 14px', border: `1px solid ${line}`, borderRadius: 11, background: mist, outline: 'none', color: ink }} /></div>
-                <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 6 }}><label style={{ fontSize: 12.5, fontWeight: 600, color: inkSoft }}>Nomor telepon</label><input type="tel" placeholder="+62 812 0000 0000" style={{ fontFamily: fontBody, fontSize: 15, padding: '12px 14px', border: `1px solid ${line}`, borderRadius: 11, background: mist, outline: 'none', color: ink }} /></div>
-              </div>
-            </div>
-            {/* passenger */}
-            <div style={{ background: '#fff', border: `1px solid ${line}`, borderRadius: 18, padding: 26, marginBottom: 18 }}>
-              <h3 style={{ fontFamily: fontDisplay, fontSize: 17, margin: '0 0 18px', color: ink }}>Penumpang 1 · Dewasa</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                {[['Gelar','select',['Tuan','Nyonya','Nona']],['Tanggal lahir','text','01 Jan 1990'],['Nama depan','text','Sesuai paspor'],['Nama belakang','text','Sesuai paspor'],['Kewarganegaraan','text','Indonesia'],['Nomor paspor','text','A1234567']].map(([lbl,type,ph],i) => (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <label style={{ fontSize: 12.5, fontWeight: 600, color: inkSoft }}>{lbl}</label>
-                    {type === 'select' ? (
-                      <select style={{ fontFamily: fontBody, fontSize: 15, padding: '12px 14px', border: `1px solid ${line}`, borderRadius: 11, background: mist, outline: 'none', color: ink }}>
-                        {ph.map(o => <option key={o}>{o}</option>)}
-                      </select>
-                    ) : (
-                      <input type={type} defaultValue={Array.isArray(ph) ? '' : ph} placeholder={typeof ph === 'string' ? ph : ''} style={{ fontFamily: fontBody, fontSize: 15, padding: '12px 14px', border: `1px solid ${line}`, borderRadius: 11, background: mist, outline: 'none', color: ink }} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* payment */}
-            <div style={{ background: '#fff', border: `1px solid ${line}`, borderRadius: 18, padding: 26, marginBottom: 18 }}>
-              <h3 style={{ fontFamily: fontDisplay, fontSize: 17, margin: '0 0 18px', color: ink }}>Metode pembayaran</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[['Kartu Kredit / Debit','Visa · Mastercard'],['Transfer Bank (Virtual Account)','BCA · Mandiri · BNI'],['E-Wallet','GoPay · OVO · DANA']].map(([lbl,sub],i) => (
-                  <label key={i} onClick={() => setPayMethod(i)} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${i === payMethod ? accent : line}`, borderRadius: 12, padding: '14px 16px', cursor: 'pointer', fontWeight: 600, fontSize: 14.5, color: ink, background: i === payMethod ? accentSoft : 'transparent', transition: '.2s' }}>
-                    <input type="radio" name="pay" readOnly checked={i === payMethod} style={{ accentColor: accent, width: 18, height: 18 }} />
-                    {lbl}
-                    <span style={{ marginLeft: 'auto', fontSize: 12.5, color: inkSoft, fontWeight: 500 }}>{sub}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-          {/* summary */}
-          <div style={{ position: 'sticky', top: 88, background: '#fff', border: `1px solid ${line}`, borderRadius: 18, padding: 26 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottom: `1px solid ${line}`, marginBottom: 16 }}>
-              <span style={{ width: 46, height: 46, borderRadius: 12, background: al.color, display: 'grid', placeItems: 'center', color: '#fff', fontWeight: 800, fontSize: 15, fontFamily: fontDisplay, flex: '0 0 auto' }}>{flight.code}</span>
-              <span>
-                <span style={{ display: 'block', fontWeight: 700, fontSize: 14.5, color: ink, lineHeight: 1.2 }}>{al.name}</span>
-                <span style={{ display: 'block', fontSize: 12.5, color: inkSoft, marginTop: 2 }}>{flight.no} · {flight.stops}</span>
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
-              <span style={{ fontFamily: fontDisplay, fontWeight: 700, fontSize: 19, color: ink }}>{state.from}</span>
-              <svg width="28" height="12" viewBox="0 0 28 12" fill="none" stroke={accent} strokeWidth="1.6"><path d="M0 6h24m0 0-4-4m4 4-4 4"/></svg>
-              <span style={{ fontFamily: fontDisplay, fontWeight: 700, fontSize: 19, color: accent }}>{state.to}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: inkSoft, margin: '9px 0' }}><span>{state.depart}</span><span style={{ color: ink, fontWeight: 600 }}>{flight.dep} – {flight.arr}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: inkSoft, margin: '9px 0' }}><span>Harga tiket ({n} dewasa)</span><span style={{ color: ink, fontWeight: 600 }}>{rp(base)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: inkSoft, margin: '9px 0' }}><span>Pajak &amp; biaya</span><span style={{ color: ink, fontWeight: 600 }}>{rp(tax)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: inkSoft, margin: '9px 0' }}><span>Biaya layanan</span><span style={{ color: ink, fontWeight: 600 }}>{rp(fee)}</span></div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderTop: `1px solid ${line}`, marginTop: 14, paddingTop: 14, color: ink, fontWeight: 700, fontSize: 18 }}>
-              <span>Total</span><b style={{ fontFamily: fontDisplay, fontSize: 22 }}>{rp(total)}</b>
-            </div>
-            <button type="button" onClick={() => onPay({ total, al, flight: { ...flight, state } })}
-              style={{ width: '100%', marginTop: 18, padding: '16px 30px', background: accent, color: '#fff', border: 'none', borderRadius: 999, fontFamily: fontBody, fontWeight: 600, fontSize: 16, cursor: 'pointer', boxShadow: '0 8px 22px -10px rgba(17,138,144,.8)' }}>Bayar Sekarang</button>
-            <p style={{ fontSize: 12, color: inkSoft, textAlign: 'center', margin: '12px 0 0' }}>Pembayaran aman &amp; terenkripsi</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ── Booking flow: Confirm screen ── */
-function ConfirmScreen({ state, flight, total, onHome }) {
-  const al = AIRLINES[flight.code]
-  const code = useRef('SY' + Math.random().toString(36).slice(2, 7).toUpperCase())
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: mist, overflowY: 'auto', animation: 'scrIn .32s ease' }}>
-      <div style={{ position: 'sticky', top: 0, zIndex: 5, background: 'rgba(255,255,255,.94)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${line}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, height: 68, maxWidth: 1080, margin: '0 auto', padding: '0 28px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 11, fontFamily: fontDisplay, fontWeight: 800, fontSize: 19, color: ink }}><BrandMark size={26} />Syududu Air</span>
-        </div>
-      </div>
-      <div style={{ maxWidth: 620, margin: '0 auto', padding: '60px 28px 90px', textAlign: 'center' }}>
-        <div style={{ width: 84, height: 84, borderRadius: '50%', background: accentSoft, color: accentDeep, display: 'grid', placeItems: 'center', margin: '0 auto 24px', animation: 'pop .4s ease' }}>
-          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="m4 12 5 5L20 6"/></svg>
-        </div>
-        <h2 style={{ fontFamily: fontDisplay, fontSize: 'clamp(26px,3vw,34px)', fontWeight: 700, letterSpacing: '-.02em', margin: '0 0 10px', color: ink }}>Pemesanan Berhasil!</h2>
-        <p style={{ color: inkSoft, margin: '0 0 26px' }}>E-tiket telah dikirim ke email kamu. Selamat menikmati penerbangan.</p>
-        <div style={{ background: '#fff', border: `1px solid ${line}`, borderRadius: 20, overflow: 'hidden', textAlign: 'left', boxShadow: '0 24px 50px -34px rgba(12,31,43,.5)' }}>
-          <div style={{ background: navy, color: '#fff', padding: '20px 26px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div><small style={{ fontSize: 12, color: 'rgba(255,255,255,.65)', display: 'block', marginBottom: 3 }}>Kode booking</small><b style={{ fontFamily: fontDisplay, fontSize: 23, letterSpacing: '.06em' }}>{code.current}</b></div>
-            <div style={{ textAlign: 'right' }}><small style={{ fontSize: 12, color: 'rgba(255,255,255,.65)', display: 'block', marginBottom: 3 }}>Status</small><b style={{ fontFamily: fontBody, fontSize: 15, fontWeight: 700, color: '#7fd6d9' }}>LUNAS</b></div>
-          </div>
-          <div style={{ padding: '24px 26px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 20 }}>
-              <span style={{ fontFamily: fontDisplay, fontWeight: 700, fontSize: 22, color: ink }}>{state.from}</span>
-              <svg width="40" height="14" viewBox="0 0 40 14" fill="none" stroke={accent} strokeWidth="1.6"><path d="M0 7h34m0 0-5-5m5 5-5 5"/></svg>
-              <span style={{ fontFamily: fontDisplay, fontWeight: 700, fontSize: 22, color: ink }}>{state.to}</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
-              {[['Maskapai',al.name],['Penerbangan',flight.no],['Tanggal',state.depart],['Berangkat',flight.dep],['Tiba',flight.arr],['Total bayar',rp(total)]].map(([k,v]) => (
-                <div key={k}><div style={{ fontSize: 12, color: inkSoft, marginBottom: 3 }}>{k}</div><div style={{ fontSize: 15, fontWeight: 700, color: ink }}>{v}</div></div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 28, flexWrap: 'wrap' }}>
-          <button type="button" onClick={() => alert('E-tiket diunduh (demo).')} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '16px 30px', background: ink, color: '#fff', border: 'none', borderRadius: 999, fontFamily: fontBody, fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>Unduh e-tiket</button>
-          <button type="button" onClick={onHome} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '16px 30px', background: 'transparent', color: ink, border: `1.5px solid ${line}`, borderRadius: 999, fontFamily: fontBody, fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>Kembali ke beranda</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 /* ── Scroll reveal hook ── */
 function useScrollReveal() {
@@ -529,18 +411,15 @@ function useScrollReveal() {
 /*              MAIN PAGE              */
 /* ════════════════════════════════════ */
 export default function LandingPage() {
+  const navigate                = useNavigate()
   const [navSolid, setNavSolid] = useState(false)
   const [tripType, setTripType] = useState('rt')
   const [from, setFrom]         = useState('Jakarta (CGK)')
   const [to, setTo]             = useState('Singapura (SIN)')
+  const [depart, setDepart]     = useState('2026-06-14')
+  const [returnDate, setReturn] = useState('2026-06-21')
+  const [pax, setPax]           = useState('1 Dewasa')
   const [searching, setSearching] = useState(false)
-  const [destBg, setDestBg]     = useState('transparent')
-
-  /* booking flow */
-  const [screen, setScreen]     = useState(null) // null | 'results' | 'booking' | 'confirm'
-  const [flightState, setFlightState] = useState({ fromCity:'Jakarta', from:'CGK', toCity:'Singapura', to:'SIN', depart:'14 Jun 2026', pax:'1 Dewasa' })
-  const [selFlight, setSelFlight] = useState(null)
-  const [bookingTotal, setBookingTotal] = useState(0)
 
   useScrollReveal()
 
@@ -551,36 +430,22 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  useEffect(() => {
-    document.body.style.overflow = screen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [screen])
-
   const handleSwap = () => { const tmp = from; setFrom(to); setTo(tmp) }
 
   function codeOf(v) { const m = (v||'').match(/\(([A-Za-z]{3})\)/); return m ? m[1].toUpperCase() : (v||'').slice(0,3).toUpperCase() }
-  function cityOf(v) { return (v||'').replace(/\s*\([^)]*\)\s*/,'').trim() || v }
 
   const handleSearch = () => {
     setSearching(true)
     setTimeout(() => {
       setSearching(false)
-      setFlightState({ fromCity: cityOf(from), from: codeOf(from), toCity: cityOf(to), to: codeOf(to), depart: '14 Jun 2026', pax: '1 Dewasa' })
-      setScreen('results')
+      const paxNum = parseInt((pax || '1').match(/\d+/)?.[0] || 1)
+      navigate(`/results?from=${codeOf(from)}&to=${codeOf(to)}&date=${depart}&pax=${paxNum}&class=ekonomi`)
     }, 700)
   }
 
   const handleSearchTo = (city, code) => {
-    setTo(`${city} (${code})`)
-    setFlightState(s => ({ ...s, toCity: city, to: code }))
-    setScreen('results')
+    navigate(`/results?from=${codeOf(from)}&to=${code}`)
   }
-
-  const handlePick = (f) => { setSelFlight(f); setScreen('booking') }
-
-  const handlePay = ({ total }) => { setBookingTotal(total); setScreen('confirm') }
-
-  const handleHome = () => setScreen(null)
 
 
   return (
@@ -611,6 +476,8 @@ export default function LandingPage() {
           .search-row{grid-template-columns:1fr 1fr!important;}
           .search-cta{grid-column:1/-1!important;}
         }
+        input[type=date]{color-scheme:light;}
+        input[type=date]::-webkit-calendar-picker-indicator{opacity:.45;cursor:pointer;}
         @media(max-width:760px){
           .nav-links{display:none!important;}
           .nav-login{display:none!important;}
@@ -641,7 +508,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ════ HERO ════ */}
-      <header id="top" style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', overflow: 'hidden', paddingBottom: 46 }}>
+      <header id="top" style={{ position: 'relative', minHeight: '100svh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 46 }}>
         <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
           <img src={heroImg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           <video autoPlay muted loop playsInline preload="auto" poster={heroImg} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}>
@@ -670,29 +537,13 @@ export default function LandingPage() {
               ))}
             </div>
             <div className="search-row" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.3fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'stretch' }}>
-              <label style={{ position: 'relative', background: mist, border: '1px solid transparent', borderRadius: 14, padding: '12px 16px', cursor: 'text', transition: '.2s' }}>
-                <span style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: inkSoft, marginBottom: 3 }}>Dari</span>
-                <input type="text" value={from} onChange={e => setFrom(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: fontBody, fontSize: 16, fontWeight: 600, color: ink, width: '100%', padding: 0 }} />
-                <SwapBtn onClick={handleSwap} />
-              </label>
-              <label className="field-swap-hide" style={{ background: mist, border: '1px solid transparent', borderRadius: 14, padding: '12px 16px', cursor: 'text', transition: '.2s' }}>
-                <span style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: inkSoft, marginBottom: 3 }}>Ke</span>
-                <input type="text" value={to} onChange={e => setTo(e.target.value)} style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: fontBody, fontSize: 16, fontWeight: 600, color: ink, width: '100%', padding: 0 }} />
-              </label>
-              <label style={{ background: mist, border: '1px solid transparent', borderRadius: 14, padding: '12px 16px', cursor: 'text', transition: '.2s' }}>
-                <span style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: inkSoft, marginBottom: 3 }}>Berangkat</span>
-                <input type="text" defaultValue="14 Jun 2026" style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: fontBody, fontSize: 16, fontWeight: 600, color: ink, width: '100%', padding: 0 }} />
-              </label>
-              {tripType === 'rt' ? (
-                <label style={{ background: mist, border: '1px solid transparent', borderRadius: 14, padding: '12px 16px', cursor: 'text', transition: '.2s' }}>
-                  <span style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: inkSoft, marginBottom: 3 }}>Kembali</span>
-                  <input type="text" defaultValue="21 Jun 2026" style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: fontBody, fontSize: 16, fontWeight: 600, color: ink, width: '100%', padding: 0 }} />
-                </label>
-              ) : <div />}
-              <label style={{ background: mist, border: '1px solid transparent', borderRadius: 14, padding: '12px 16px', cursor: 'text', transition: '.2s' }}>
-                <span style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: inkSoft, marginBottom: 3 }}>Penumpang</span>
-                <input type="text" defaultValue="1 Dewasa" style={{ border: 'none', background: 'transparent', outline: 'none', fontFamily: fontBody, fontSize: 16, fontWeight: 600, color: ink, width: '100%', padding: 0 }} />
-              </label>
+              <AirportSelect label="Dari" value={from} onChange={setFrom} hasSwap onSwap={handleSwap} />
+              <div className="field-swap-hide" style={{ display: 'contents' }}>
+                <AirportSelect label="Ke" value={to} onChange={setTo} />
+              </div>
+              <DateField label="Berangkat" value={depart} onChange={setDepart} />
+              {tripType === 'rt' ? <DateField label="Kembali" value={returnDate} onChange={setReturn} /> : <div />}
+              <PaxSelect onChange={setPax} />
               <div className="search-cta" style={{ display: 'flex', alignItems: 'stretch' }}>
                 <button type="button" onClick={handleSearch} style={{ width: '100%', borderRadius: 14, paddingLeft: 26, paddingRight: 26, fontSize: 15, fontFamily: fontBody, fontWeight: 600, border: 'none', background: accent, color: '#fff', cursor: 'pointer', boxShadow: '0 8px 22px -10px rgba(17,138,144,.8)', transition: '.2s', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                   {searching ? 'Mencari…' : 'Cari Penerbangan'}
@@ -716,7 +567,7 @@ export default function LandingPage() {
       </section>
 
       {/* ════ DESTINATIONS ════ */}
-      <section id="destinasi" style={{ padding: '104px 0', transition: 'background .8s ease', background: destBg || 'transparent' }}>
+      <section id="destinasi" style={{ padding: '104px 0' }}>
         <div style={maxW}>
           <div className="reveal" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 30, marginBottom: 46, flexWrap: 'wrap' }}>
             <div>
@@ -725,7 +576,7 @@ export default function LandingPage() {
             </div>
             <p style={{ color: inkSoft, maxWidth: '42ch', fontSize: 16, margin: 0 }}>Dari gemerlap Tokyo hingga pesisir Sydney — rute internasional favorit dengan harga terbaik minggu ini.</p>
           </div>
-          <DestCarousel onSearchTo={handleSearchTo} onBgChange={setDestBg} />
+          <DestBentoGrid onSearchTo={handleSearchTo} />
         </div>
       </section>
 
@@ -820,10 +671,6 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* ════ BOOKING FLOW SCREENS ════ */}
-      {screen === 'results' && <ResultsScreen state={flightState} onBack={handleHome} onPick={handlePick} />}
-      {screen === 'booking' && selFlight && <BookingScreen state={flightState} flight={selFlight} onBack={() => setScreen('results')} onPay={handlePay} />}
-      {screen === 'confirm' && selFlight && <ConfirmScreen state={flightState} flight={selFlight} total={bookingTotal} onHome={handleHome} />}
     </div>
   )
 }

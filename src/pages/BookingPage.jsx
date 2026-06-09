@@ -44,7 +44,7 @@ export default function BookingPage() {
   useEffect(() => {
     const { fullName, gender, birthDate } = formData
     if (fullName && gender && birthDate && step < 1) setStep(1)
-  }, [formData])
+  }, [formData, step])
 
   if (!flight) return (
     <div style={{ minHeight: '100vh', background: '#020617', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
