@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { User, Phone, Mail, CreditCard } from 'lucide-react'
+import { User, Phone, CreditCard } from 'lucide-react'
 
 const fadeUp = (i = 0) => ({
   initial: { opacity: 0, y: 20 },

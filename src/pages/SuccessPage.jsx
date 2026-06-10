@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Home, Download } from 'lucide-react'
@@ -11,7 +11,11 @@ const QR_CELLS = Array.from({ length: 49 }, () => Math.random() > 0.42)
 
 export default function SuccessPage() {
   const navigate = useNavigate()
-  const [bookingData, setBookingData] = useState(null)
+  const [bookingData] = useState(() => {
+    const saved = localStorage.getItem('bookingData')
+    if (!saved) return null
+    try { return JSON.parse(saved) } catch { return null }
+  })
   const [confetti]   = useState(() =>
     Array.from({ length: 24 }, (_, i) => ({
       id: i,
@@ -22,14 +26,6 @@ export default function SuccessPage() {
       dur:   Math.random() * 4 + 4,
     }))
   )
-
-  useEffect(() => {
-    const saved = localStorage.getItem('bookingData')
-    if (saved) {
-      try { setBookingData(JSON.parse(saved)) }
-      catch { /* ignore */ }
-    }
-  }, [])
 
   const flight    = bookingData?.flight
   const formData  = bookingData?.formData

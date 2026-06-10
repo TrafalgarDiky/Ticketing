@@ -2,6 +2,21 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice } from '../data/flights'
 import { Wifi, UtensilsCrossed, Luggage, Star, ArrowRight } from 'lucide-react'
+import garudaLogo      from '../assets/garudaLogo.png'
+import singaporeLogo   from '../assets/singaporeAirlinesLogo.png'
+import emiratesLogo    from '../assets/emiratesLogo.png'
+import qatarLogo       from '../assets/qatarAirwaysLogo.jpg'
+import etihadLogo      from '../assets/eithadAirwaysLogo.png'
+import malaysiaLogo    from '../assets/malaysiaAirlinesLogo.png'
+
+const AIRLINE_LOGOS = {
+  GA: garudaLogo,
+  SQ: singaporeLogo,
+  EK: emiratesLogo,
+  QR: qatarLogo,
+  EY: etihadLogo,
+  MH: malaysiaLogo,
+}
 
 function PlaneIcon() {
   return (
@@ -39,11 +54,19 @@ export default function FlightDetailPanel({ flight, theme }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
-            background: flight.airline.color,
+            background: AIRLINE_LOGOS[flight.airline.code] ? '#fff' : flight.airline.color,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 900, color: '#fff',
+            overflow: 'hidden',
           }}>
-            {flight.airline.abbr}
+            {AIRLINE_LOGOS[flight.airline.code] ? (
+              <img
+                src={AIRLINE_LOGOS[flight.airline.code]}
+                alt={flight.airline.name}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 5 }}
+              />
+            ) : (
+              <span style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{flight.airline.abbr}</span>
+            )}
           </div>
           <div>
             <div style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>{flight.airline.name}</div>

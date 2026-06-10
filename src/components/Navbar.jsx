@@ -27,17 +27,21 @@ function GaJadiPergiLogo({ size = 36 }) {
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [lastPath, setLastPath] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
   const isHome = location.pathname === '/'
+
+  if (lastPath !== location.pathname) {
+    setLastPath(location.pathname)
+    setMenuOpen(false)
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-
-  useEffect(() => setMenuOpen(false), [location.pathname])
 
   const navBg = isHome && !scrolled
     ? 'rgba(2,6,23,0.35)'

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
@@ -10,8 +10,11 @@ const STEPS = ['Penumpang', 'Kontak', 'Tambahan', 'Pembayaran']
 
 export default function BookingPage() {
   const navigate  = useNavigate()
-  const [flight,  setFlight]  = useState(null)
-  const [step,    setStep]    = useState(0)
+  const [flight] = useState(() => {
+    const saved = localStorage.getItem('selectedFlight')
+    if (!saved) return null
+    try { return JSON.parse(saved) } catch { return null }
+  })
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '', gender: '', nationality: 'ID',
@@ -21,30 +24,22 @@ export default function BookingPage() {
   })
 
   useEffect(() => {
-    const saved = localStorage.getItem('selectedFlight')
-    if (saved) {
-      try { setFlight(JSON.parse(saved)) }
-      catch { navigate('/') }
-    } else {
-      navigate('/')
-    }
-  }, [navigate])
+    if (!flight) navigate('/')
+  }, [flight, navigate])
+
+  const step = useMemo(() => {
+    const { fullName, gender, birthDate } = formData
+    return fullName && gender && birthDate ? 1 : 0
+  }, [formData])
 
   const handleBook = () => {
     setLoading(true)
-    // Save booking data for success page
     localStorage.setItem('bookingData', JSON.stringify({ flight, formData, bookingId: `TRB-${Math.random().toString(36).substr(2,8).toUpperCase()}` }))
     setTimeout(() => {
       setLoading(false)
       navigate('/success')
     }, 1600)
   }
-
-  // Simulate step progression as form fills
-  useEffect(() => {
-    const { fullName, gender, birthDate } = formData
-    if (fullName && gender && birthDate && step < 1) setStep(1)
-  }, [formData, step])
 
   if (!flight) return (
     <div style={{ minHeight: '100vh', background: '#020617', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

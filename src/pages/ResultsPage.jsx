@@ -26,7 +26,7 @@ const SORT_OPTIONS = [
   { v: 'duration', l: 'Durasi Terpendek' },
 ]
 
-const FILTER_CHIPS = ['Semua', 'Langsung', '1 Transit', 'Garuda', 'AirAsia', 'Lion Air', 'Citilink', 'Batik Air']
+const FILTER_CHIPS = ['Semua', 'Langsung', '1 Transit', 'Garuda', 'Singapore', 'Emirates', 'Qatar', 'Etihad', 'Malaysia']
 
 export default function ResultsPage() {
   const [params]  = useSearchParams()
@@ -42,18 +42,18 @@ export default function ResultsPage() {
   const toAirport   = airports.find(a => a.code === to)   || airports[1]
 
   const [flights,     setFlights]     = useState([])
-  const [loading,     setLoading]     = useState(true)
+  const [loadedRoute, setLoadedRoute] = useState(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [sortBy,      setSortBy]      = useState('price')
   const [activeFilter,setActiveFilter]= useState('Semua')
-  const [theme,       setTheme]       = useState(DEFAULT_THEME)
+
+  const loading = loadedRoute?.from !== from || loadedRoute?.to !== to
 
   // Generate flights with skeleton delay
   useEffect(() => {
-    setLoading(true)
     const timer = setTimeout(() => {
       setFlights(generateFlights(from, to))
-      setLoading(false)
+      setLoadedRoute({ from, to })
     }, 900)
     return () => clearTimeout(timer)
   }, [from, to])
@@ -74,12 +74,10 @@ export default function ResultsPage() {
     return 0
   }), [filtered, sortBy])
 
-  // Update theme when active flight changes
-  useEffect(() => {
-    if (!sortedFlights.length) return
+  const theme = useMemo(() => {
     const flight = sortedFlights[activeIndex]
-    if (!flight) return
-    setTheme(airlineThemes[flight.airline.code] || DEFAULT_THEME)
+    if (!flight) return DEFAULT_THEME
+    return airlineThemes[flight.airline.code] || DEFAULT_THEME
   }, [activeIndex, sortedFlights])
 
   const handleSelect = (i) => {

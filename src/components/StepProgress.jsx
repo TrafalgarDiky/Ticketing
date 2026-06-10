@@ -7,7 +7,6 @@ export default function StepProgress({ steps, currentStep }) {
       {steps.map((step, i) => {
         const done    = i < currentStep
         const active  = i === currentStep
-        const future  = i > currentStep
 
         return (
           <div key={step} className="sp-step">

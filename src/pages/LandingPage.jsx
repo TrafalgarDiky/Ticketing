@@ -28,23 +28,6 @@ const fontDisplay = "'Bricolage Grotesque','Plus Jakarta Sans',sans-serif"
 const fontBody    = "'Plus Jakarta Sans',system-ui,sans-serif"
 const maxW        = { maxWidth: 1240, margin: '0 auto', padding: '0 28px' }
 
-/* ── Airlines data ── */
-const AIRLINES = {
-  SQ:{ name:'Singapore Airlines', color:'#1c3f94' },
-  EK:{ name:'Emirates',           color:'#d71921' },
-  QR:{ name:'Qatar Airways',      color:'#5c0632' },
-  CX:{ name:'Cathay Pacific',     color:'#00665e' },
-  TK:{ name:'Turkish Airlines',   color:'#c70a0c' },
-  JL:{ name:'Japan Airlines',     color:'#b21e35' },
-}
-const FLIGHTS = [
-  { code:'SQ', no:'SQ 957', dep:'06:20', arr:'09:10', dur:'2j 50m', durMin:170, stops:'Langsung',  price:1850000 },
-  { code:'EK', no:'EK 357', dep:'08:45', arr:'13:20', dur:'4j 35m', durMin:275, stops:'1 transit', price:1620000 },
-  { code:'CX', no:'CX 718', dep:'10:30', arr:'13:25', dur:'2j 55m', durMin:175, stops:'Langsung',  price:2090000 },
-  { code:'TK', no:'TK 67',  dep:'13:15', arr:'18:40', dur:'5j 25m', durMin:325, stops:'1 transit', price:1490000 },
-  { code:'JL', no:'JL 726', dep:'16:05', arr:'19:05', dur:'3j 00m', durMin:180, stops:'Langsung',  price:2250000 },
-  { code:'QR', no:'QR 955', dep:'19:40', arr:'23:30', dur:'3j 50m', durMin:230, stops:'1 transit', price:1750000 },
-]
 
 /* ── Destination carousel data ── */
 const DESTS = [
@@ -86,14 +69,20 @@ const AIRLINE_MARQUEE = [
   ['AF','Air France','#13284f'],['SU','Aeroflot','#1b4ea0'],['AY','Finnair','#0b1f8f'],
 ]
 
-function rp(n) { return 'Rp ' + n.toLocaleString('id-ID') }
 
 
 /* ── Brand logo mark ── */
-function BrandMark({ size = 30 }) {
+function GaJadiPergiLogo({ size = 30 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <path d="M3 17.5 29 4 18.5 29l-3.3-9.4a1 1 0 0 0-.6-.6L3 17.5Z" fill={accent} />
+    <svg viewBox="0 0 44 44" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="22" cy="9" r="7" fill="#DDAA3F" />
+      <circle cx="22" cy="9" r="5" fill="#F0C040" />
+      <line x1="22" y1="16" x2="22" y2="36" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+      <path d="M 4 36 Q 12 20 22 16" stroke="white" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path d="M 40 36 Q 32 20 22 16" stroke="white" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <line x1="3" y1="36" x2="41" y2="36" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <path d="M 27 20 L 35 16 L 34 20.5 L 29 22 L 27 26 L 25 24 Z" fill="white" />
+      <path d="M 31 16.5 L 35 16 L 34 20.5 Z" fill="rgba(255,255,255,0.6)" />
     </svg>
   )
 }
@@ -132,11 +121,15 @@ function SwapBtn({ onClick }) {
 
 /* ── Airport autocomplete ── */
 function AirportSelect({ label, value, onChange, hasSwap, onSwap }) {
-  const [open, setOpen] = useState(false)
-  const [q, setQ]       = useState(value)
-  const ref             = useRef(null)
+  const [open, setOpen]       = useState(false)
+  const [q, setQ]             = useState(value)
+  const [lastValue, setLastValue] = useState(value)
+  const ref                   = useRef(null)
 
-  useEffect(() => { setQ(value) }, [value])
+  if (lastValue !== value) {
+    setLastValue(value)
+    setQ(value)
+  }
 
   useEffect(() => {
     const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
@@ -491,8 +484,12 @@ export default function LandingPage() {
       {/* ════ NAV ════ */}
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 60, transition: 'background .35s ease, box-shadow .35s ease, border-color .35s', borderBottom: navSolid ? `1px solid ${line}` : '1px solid transparent', background: navSolid ? 'rgba(255,255,255,.92)' : 'transparent', backdropFilter: navSolid ? 'blur(14px)' : 'none', boxShadow: navSolid ? '0 8px 30px -22px rgba(12,31,43,.5)' : 'none' }}>
         <div style={{ ...maxW, display: 'flex', alignItems: 'center', gap: 34, height: 74 }}>
-          <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 11, fontFamily: fontDisplay, fontWeight: 800, fontSize: 22, letterSpacing: '-0.03em', color: navSolid ? ink : '#fff', transition: 'color .35s', textDecoration: 'none' }}>
-            <BrandMark />Syududu Air
+          <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: fontDisplay, textDecoration: 'none' }}>
+            <GaJadiPergiLogo size={32} />
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+              <span style={{ fontWeight: 900, fontSize: 15, color: navSolid ? ink : '#fff', transition: 'color .35s' }}>GaJadiPergi</span>
+              <span style={{ fontSize: 9, fontWeight: 600, color: '#DDAA3F', letterSpacing: '0.08em' }}>.com</span>
+            </div>
           </a>
           <div className="nav-links" style={{ display: 'flex', gap: 30, marginLeft: 8 }}>
             {['Destinasi','Keunggulan','Armada','Bantuan'].map((lbl, i) => (
@@ -585,7 +582,7 @@ export default function LandingPage() {
         <div style={maxW}>
           <div className="reveal" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 30, marginBottom: 46, flexWrap: 'wrap' }}>
             <div>
-              <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: accent, marginBottom: 14 }}>Kenapa Syududu Air</p>
+              <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: accent, marginBottom: 14 }}>Kenapa GaJadiPergi.com</p>
               <h2 style={{ fontFamily: fontDisplay, fontSize: 'clamp(30px,3.6vw,48px)', fontWeight: 700, letterSpacing: '-0.02em', margin: 0, maxWidth: '18ch', color: ink }}>Terbang yang terasa ringan.</h2>
             </div>
             <p style={{ color: inkSoft, maxWidth: '42ch', fontSize: 16, margin: 0 }}>Setiap detail kami rancang supaya perjalananmu mulus dari pesan tiket sampai mendarat.</p>
@@ -603,7 +600,7 @@ export default function LandingPage() {
       <section style={{ padding: '104px 0', background: navy, color: '#fff', overflow: 'hidden' }} id="armada">
         <div className="exp-in reveal" style={{ ...maxW, display: 'grid', gridTemplateColumns: '1.05fr 1fr', gap: 64, alignItems: 'center' }}>
           <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', aspectRatio: '4/3', boxShadow: '0 40px 80px -40px rgba(0,0,0,.7)' }}>
-            <img src={heroImg} alt="Pesawat Syududu Air di atas awan" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={heroImg} alt="Pesawat di atas awan" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div>
             <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#7fd6d9', marginBottom: 16 }}>Armada &amp; pengalaman</p>
@@ -624,7 +621,7 @@ export default function LandingPage() {
       {/* ════ CTA ════ */}
       <section id="bantuan" style={{ padding: '96px 0', textAlign: 'center', background: `radial-gradient(120% 140% at 50% 0%,${accentSoft} 0%,#fff 60%)` }}>
         <div style={maxW}>
-          <h2 className="reveal" style={{ fontFamily: fontDisplay, fontSize: 'clamp(30px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em', maxWidth: '18ch', margin: '0 auto 18px', color: ink }}>Siap mengudara bersama Syududu Air?</h2>
+          <h2 className="reveal" style={{ fontFamily: fontDisplay, fontSize: 'clamp(30px,4vw,54px)', fontWeight: 700, letterSpacing: '-0.02em', maxWidth: '18ch', margin: '0 auto 18px', color: ink }}>Siap mengudara bersama GaJadiPergi.com?</h2>
           <p className="reveal" style={{ color: inkSoft, fontSize: 17, maxWidth: '48ch', margin: '0 auto 32px' }}>Unduh aplikasi untuk check-in 1 menit, boarding pass digital, dan penawaran rute eksklusif.</p>
           <div className="reveal" style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '16px 30px', background: ink, color: '#fff', border: 'none', borderRadius: 999, fontFamily: fontBody, fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>Unduh aplikasi</button>
@@ -639,7 +636,13 @@ export default function LandingPage() {
         <div style={maxW}>
           <div className="foot-grid reveal" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 40, paddingBottom: 50, borderBottom: '1px solid rgba(255,255,255,.12)' }}>
             <div className="foot-brand-cell">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 11, fontFamily: fontDisplay, fontWeight: 800, fontSize: 24, color: '#fff', marginBottom: 18 }}><BrandMark />Syududu Air</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                <GaJadiPergiLogo size={32} />
+                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+                  <span style={{ fontFamily: fontDisplay, fontWeight: 900, fontSize: 20, color: '#fff' }}>GaJadiPergi</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: '#DDAA3F', letterSpacing: '0.08em' }}>.com</span>
+                </div>
+              </div>
               <p style={{ fontSize: 14.5, maxWidth: '34ch', lineHeight: 1.6, margin: '0 0 22px', color: 'rgba(255,255,255,.7)' }}>Menghubungkan kamu ke seluruh dunia. Terbang lebih dekat ke orang dan tempat yang kamu cintai.</p>
               <div style={{ display: 'flex', gap: 10 }}>
                 {[
@@ -652,7 +655,7 @@ export default function LandingPage() {
               </div>
             </div>
             {[
-              { head:'Jelajahi', links:[['Destinasi','#destinasi'],['Cari tiket','#search'],['Promo & diskon','#'],['Kartu Syududu','#']] },
+              { head:'Jelajahi', links:[['Destinasi','#destinasi'],['Cari tiket','#search'],['Promo & diskon','#'],['Kartu GaJadiPergi','#']] },
               { head:'Perusahaan', links:[['Tentang kami','#'],['Armada','#armada'],['Karier','#'],['Keberlanjutan','#']] },
               { head:'Bantuan', links:[['Pusat bantuan','#'],['Status penerbangan','#'],['Refund & ubah jadwal','#'],['Hubungi kami','#']] },
             ].map(col => (
@@ -665,7 +668,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', flexWrap: 'wrap', gap: 8, paddingTop: 24, fontSize: 13, color: 'rgba(255,255,255,.5)' }}>
-            <span>© 2026 DikyFirmansyah. Syududu Air</span>
+            <span>© 2026 DikyFirmansyah. GaJadiPergi.com</span>
             <span>Syarat &amp; Ketentuan · Kebijakan Privasi</span>
           </div>
         </div>

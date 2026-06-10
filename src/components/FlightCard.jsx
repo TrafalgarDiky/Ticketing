@@ -1,6 +1,21 @@
 import { motion } from 'framer-motion'
 import { formatPrice } from '../data/flights'
 import { Wifi, UtensilsCrossed, Luggage, Star } from 'lucide-react'
+import garudaLogo      from '../assets/garudaLogo.png'
+import singaporeLogo   from '../assets/singaporeAirlinesLogo.png'
+import emiratesLogo    from '../assets/emiratesLogo.png'
+import qatarLogo       from '../assets/qatarAirwaysLogo.jpg'
+import etihadLogo      from '../assets/eithadAirwaysLogo.png'
+import malaysiaLogo    from '../assets/malaysiaAirlinesLogo.png'
+
+const AIRLINE_LOGOS = {
+  GA: garudaLogo,
+  SQ: singaporeLogo,
+  EK: emiratesLogo,
+  QR: qatarLogo,
+  EY: etihadLogo,
+  MH: malaysiaLogo,
+}
 
 function FacilityTag({ name }) {
   const Icon = name.includes('WiFi')  ? Wifi
@@ -58,11 +73,19 @@ export default function FlightCard({ flight, isActive, theme, onClick }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <div style={{
           width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-          background: flight.airline.color,
+          background: AIRLINE_LOGOS[flight.airline.code] ? '#fff' : flight.airline.color,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 900, color: '#fff',
+          overflow: 'hidden',
         }}>
-          {flight.airline.abbr}
+          {AIRLINE_LOGOS[flight.airline.code] ? (
+            <img
+              src={AIRLINE_LOGOS[flight.airline.code]}
+              alt={flight.airline.name}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }}
+            />
+          ) : (
+            <span style={{ fontSize: 11, fontWeight: 900, color: '#fff' }}>{flight.airline.abbr}</span>
+          )}
         </div>
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{flight.airline.name}</div>
